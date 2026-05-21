@@ -27,6 +27,22 @@ def main(args):
     in the usernames list defined at the beginning of the scrit.
     2- Updates README.md file.
     """
+    # SECURITY FIX: Sanitize usernames to prevent injection attacks
+    import re
+    def sanitize_username(username: str) -> str:
+        """Remove any characters that could be used for injection"""
+        # Only allow letters, numbers, underscore, hyphen, and dot
+        return re.sub(r'[^a-zA-Z0-9_\-\.]', '', username.strip())
+    
+    sanitized_usernames = []
+    for user in USERNAMES:
+        clean = sanitize_username(user)
+        if clean:
+            sanitized_usernames.append(clean)
+    
+    logging.info(f"Sanitized {len(USERNAMES)} usernames to {len(sanitized_usernames)} valid entries")
+    USERNAMES = sanitized_usernames
+    
     with requests.Session() as session:
         session.headers.update(HEADERS)
         
@@ -35,7 +51,6 @@ def main(args):
         for user in USERNAMES:
             user_repos = RepoManager().extract_repos(user, session)
             repo_lang_map.update(user_repos)
-        logging.info(f"Extracted language data for {len(repo_lang_map)} repositories.")
 
         logging.info(f"Gathering issues using Search API...")
         all_raw_issues = []
